@@ -83,4 +83,33 @@ export async function build(
     })
     server.close()
   }
+
+  // Generate OG image if enabled and no custom OG image is provided
+  if (options.data.config.generateOgImage && !options.data.config.seoMeta?.ogImage) {
+    const { exportSlides, getExportOptions } = await import('./export')
+
+    const port = 12446
+    const app = connect()
+    const server = http.createServer(app)
+    app.use(
+      config.base,
+      sirv(outDir, {
+        etag: true,
+        single: true,
+        dev: true,
+      }),
+    )
+    server.listen(port)
+
+    // Export only the first slide as PNG directly to output directory
+    await exportSlides({
+      port,
+      base: config.base,
+      ...getExportOptions(args, options, join(outDir, 'og.png')),
+      format: 'png',
+      range: '1',
+      perSlide: true,
+    })
+    server.close()
+  }
 }

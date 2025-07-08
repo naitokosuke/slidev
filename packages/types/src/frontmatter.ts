@@ -261,6 +261,12 @@ export interface HeadmatterConfig extends TransitionOptions {
    * @default {}
    */
   seoMeta?: SeoMeta
+  /**
+   * Generate Open Graph image from the first slide automatically
+   *
+   * @default false
+   */
+  generateOgImage?: boolean
 }
 
 export interface Frontmatter extends TransitionOptions {
