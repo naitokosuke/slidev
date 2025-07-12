@@ -493,6 +493,12 @@
           "markdownDescription": "Seo meta tags settings",
           "default": {}
         },
+        "generateOgImage": {
+          "type": "boolean",
+          "description": "Generate Open Graph image from the first slide automatically",
+          "markdownDescription": "Generate Open Graph image from the first slide automatically",
+          "default": false
+        },
         "defaults": {
           "$ref": "#/definitions/Frontmatter",
           "description": "Default frontmatter options applied to all slides",
