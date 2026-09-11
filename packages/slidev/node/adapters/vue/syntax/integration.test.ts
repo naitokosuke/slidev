@@ -4,19 +4,18 @@ import path from 'pathe'
 import * as shiki from 'shiki'
 import { expect, it } from 'vitest'
 import { useMarkdownItPlugins } from '.'
-import { vueCodeblockTransformers } from '../adapters/vue/codeblock'
 
 it('all syntax combined', async () => {
   const md = MarkdownExit({ html: true })
   const map = new Map<string, MagicString>()
 
   await useMarkdownItPlugins(md, {
-    userRoot: path.join(__dirname, '../../../../test/fixtures/'),
+    userRoot: path.join(__dirname, '../../../../../../test/fixtures/'),
     data: {
       watchFiles: {},
       slides: [{
         index: 0,
-        source: { filepath: path.join(__dirname, '../../../../test/fixtures/test.md') },
+        source: { filepath: path.join(__dirname, '../../../../../../test/fixtures/test.md') },
       }],
       config: {},
       features: { katex: true },
@@ -26,7 +25,7 @@ it('all syntax combined', async () => {
       shikiOptions: { theme: 'nord' },
       katexOptions: {},
     },
-  } as any, map, vueCodeblockTransformers)
+  } as any, map, [])
 
   const result = await md.renderAsync(`
 # Slide Title

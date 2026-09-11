@@ -1,16 +1,13 @@
 import type { ResolvedSlidevOptions } from '@slidev/types'
 import type { Plugin, ViteDevServer } from 'vite'
+import type { SlidevFrameworkAdapter } from '../adapters/types'
 import type { SlidevMcpContext } from '../mcp/server'
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node'
 import { version } from '../../package.json'
 import { createSlidevMcpServer } from '../mcp/server'
-import { getServerRefState } from './serverRef'
+import { getSharedState } from './sharedState'
 
 export const MCP_ENDPOINT = '/__mcp'
-
-// Keep in sync with `vite-plugin-vue-server-ref` internals
-const SERVER_REF_WS_EVENT = 'vue-server-ref'
-const SERVER_REF_NAV_MODULE_IDS = ['/@server-reactive/nav', '/@server-ref/nav']
 
 /**
  * Serves the Slidev MCP (Model Context Protocol) server on the dev server at
@@ -19,6 +16,7 @@ const SERVER_REF_NAV_MODULE_IDS = ['/@server-reactive/nav', '/@server-ref/nav']
  */
 export function createMcpPlugin(
   options: ResolvedSlidevOptions,
+  adapter: SlidevFrameworkAdapter,
 ): Plugin {
   return {
     name: 'slidev:mcp',
@@ -35,10 +33,10 @@ export function createMcpPlugin(
         getServerUrl: () => server.resolvedUrls?.local[0],
         nav: {
           getState: () => {
-            const nav = getServerRefState(options)?.nav
+            const nav = getSharedState(options)?.nav
             return { page: nav?.page ?? 0, clicks: nav?.clicks ?? 0 }
           },
-          go: (page, clicks) => navigateClients(server, options, page, clicks),
+          go: (page, clicks) => navigateClients(server, options, adapter, page, clicks),
         },
       }
 
@@ -90,47 +88,37 @@ export function createMcpPlugin(
 
 /**
  * Drive all connected clients to the given slide by patching the shared
- * `nav` state, mimicking what `vite-plugin-vue-server-ref` does when a
- * presenter or remote-control client navigates.
+ * `nav` state, mimicking what happens when a presenter or remote-control
+ * client navigates.
  */
 function navigateClients(
   server: ViteDevServer,
   options: ResolvedSlidevOptions,
+  adapter: SlidevFrameworkAdapter,
   page: number,
   clicks: number,
 ) {
   const time = Date.now()
 
-  const nav = getServerRefState(options)?.nav
+  const nav = getSharedState(options)?.nav
   if (nav) {
     nav.page = page
     nav.clicks = clicks
     nav.lastUpdate = { id: 'slidev-mcp', type: 'presenter', time }
   }
 
-  // Refresh the initial state served to newly loaded clients
-  for (const id of SERVER_REF_NAV_MODULE_IDS) {
-    const module = server.moduleGraph.getModuleById(id)
-    if (module)
-      server.moduleGraph.invalidateModule(module)
-  }
-
   // Clients ignore patches attributed to their own role (presenter/viewer),
   // so send one patch as each role to reach both kinds of clients.
   for (const type of ['presenter', 'viewer'] as const) {
-    server.hot.send({
-      type: 'custom',
-      event: SERVER_REF_WS_EVENT,
-      data: {
-        key: 'nav',
-        source: 'slidev-mcp',
-        patch: {
-          page,
-          clicks,
-          lastUpdate: { id: 'slidev-mcp', type, time },
-        },
-        timestamp: time,
+    adapter.sharedState.send(server, {
+      key: 'nav',
+      source: 'slidev-mcp',
+      patch: {
+        page,
+        clicks,
+        lastUpdate: { id: 'slidev-mcp', type, time },
       },
+      timestamp: time,
     })
   }
 }

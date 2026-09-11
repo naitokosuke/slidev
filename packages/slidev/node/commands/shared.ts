@@ -45,10 +45,6 @@ export async function resolveViteConfigs(
     configFile: false,
     root: options.userRoot,
     plugins: await ViteSlidevPlugin(options, baseConfig.slidev, serverOptions),
-    define: {
-      // Fixes Vue production mode breaking PDF Export #1245
-      __VUE_PROD_DEVTOOLS__: false,
-    },
   } satisfies InlineConfig)
 
   return baseConfig

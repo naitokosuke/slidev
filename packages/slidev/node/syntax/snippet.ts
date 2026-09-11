@@ -3,11 +3,23 @@ import type { MarkdownExit } from 'markdown-exit'
 import fs from 'node:fs'
 import { slash } from '@antfu/utils'
 import { yellow } from 'ansis'
-import lz from 'lz-string'
 import path from 'pathe'
 import { isPathInsideRoots } from '../utils'
 import { regexSlideSourceId } from '../vite/common'
 import { monacoWriterWhitelist } from '../vite/monacoWrite'
+
+/**
+ * `<<< path {monaco-write}` produces a `monaco_write` token with the file content,
+ * whose renderer rule is provided by the framework adapter.
+ */
+export interface MonacoWriteToken {
+  content: string
+  meta: {
+    filepath: string
+    lang: string
+    meta: string
+  }
+}
 
 const RE_NEWLINE = /\r?\n/
 
@@ -184,11 +196,11 @@ export default function MarkdownItSnippet(md: MarkdownExit, { userRoot, userWork
       monacoWriterWhitelist.add(filepath)
       lang = lang.trim()
       meta = meta.replace('{monaco-write}', '').trim() || '{}'
-      const safeFilepath = JSON.stringify(filepath).slice(1, -1)
-      const encoded = lz.compressToBase64(content)
 
-      const token = state.push('html_block', '', 0)
-      token.content = `<Monaco writable="${safeFilepath}" code-lz="${encoded}" lang="${lang}" v-bind="${meta}" />\n`
+      // Rendered by the framework adapter (see `MonacoWriteToken`)
+      const token = state.push('monaco_write', '', 0)
+      token.content = content
+      token.meta = { filepath, lang, meta } satisfies MonacoWriteToken['meta']
       token.map = [startLine, startLine + 1]
     }
     else {

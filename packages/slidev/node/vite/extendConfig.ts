@@ -5,12 +5,11 @@ import { slash, uniq } from '@antfu/utils'
 import { createResolve } from 'mlly'
 import { join } from 'pathe'
 import { mergeConfig } from 'vite'
-import { isInstalledGlobally, resolveImportPath, toAtFS } from '../resolver'
+import { isInstalledGlobally, toAtFS } from '../resolver'
 
 const RE_SLIDEV_CLIENT = /^@slidev\/client$/
 const RE_SLIDEV_CLIENT_SUBPATH = /^@slidev\/client\/(.*)/
 const RE_SLIDEV_VIRTUAL = /^#slidev\/(.*)/
-const RE_MONACO_EDITOR = /\/monaco-editor(?:-core)?\//
 
 const INCLUDE_GLOBAL = [
   '@fix-webm-duration/fix',
@@ -29,7 +28,6 @@ const INCLUDE_LOCAL = INCLUDE_GLOBAL.map(i => `@slidev/cli > @slidev/client > ${
 // @keep-sorted
 const EXCLUDE_GLOBAL = [
   '@antfu/utils',
-  '@shikijs/magic-move/vue',
   '@shikijs/monaco',
   '@shikijs/vitepress-twoslash/client',
   '@slidev/client',
@@ -40,31 +38,16 @@ const EXCLUDE_GLOBAL = [
   '@slidev/parser/core',
   '@slidev/rough-notation',
   '@slidev/types',
-  '@unhead/vue',
   '@unocss/reset',
-  '@vueuse/core',
-  '@vueuse/math',
-  '@vueuse/motion',
-  '@vueuse/shared',
   'drauu',
-  'floating-vue',
   'fuse.js',
   'mermaid',
   'monaco-editor',
   'shiki',
   'shiki/core',
-  'vue-demi',
-  'vue-router',
-  'vue',
 ]
 
 const EXCLUDE_LOCAL = EXCLUDE_GLOBAL
-
-const ASYNC_MODULES = [
-  'file-saver',
-  'vue',
-  '@vue',
-]
 
 export function createConfigPlugin(options: ResolvedSlidevOptions): Plugin {
   const resolveClientDep = createResolve({
@@ -91,10 +74,6 @@ export function createConfigPlugin(options: ResolvedSlidevOptions): Plugin {
               find: RE_SLIDEV_VIRTUAL,
               replacement: '/@slidev/$1',
             },
-            {
-              find: 'vue',
-              replacement: await resolveImportPath('vue/dist/vue.esm-bundler.js', true),
-            },
             ...(isInstalledGlobally.value
               ? await Promise.all(INCLUDE_GLOBAL.map(async dep => ({
                   find: dep,
@@ -103,7 +82,6 @@ export function createConfigPlugin(options: ResolvedSlidevOptions): Plugin {
               : []
             ),
           ],
-          dedupe: ['vue'],
         },
         optimizeDeps: isInstalledGlobally.value
           ? {
@@ -137,58 +115,8 @@ export function createConfigPlugin(options: ResolvedSlidevOptions): Plugin {
           },
         },
         publicDir: join(options.userRoot, 'public'),
-        build: {
-          rollupOptions: {
-            output: {
-              chunkFileNames(chunkInfo) {
-                const DEFAULT = 'assets/[name]-[hash].js'
-
-                // Already handled in manualChunks
-                if (chunkInfo.name.includes('/'))
-                  return DEFAULT
-
-                // Over 60% of the chunk is slidev client code, we put it into slidev chunk
-                if (chunkInfo.moduleIds.filter(i => isSlidevClient(i)).length > chunkInfo.moduleIds.length * 0.6)
-                  return 'assets/slidev/[name]-[hash].js'
-
-                // Monaco Editor
-                if (chunkInfo.moduleIds.filter(i => i.match(RE_MONACO_EDITOR)).length > chunkInfo.moduleIds.length * 0.6)
-                  return 'assets/monaco/[name]-[hash].js'
-
-                return DEFAULT
-              },
-              manualChunks(id) {
-                if (id.startsWith('/@slidev-monaco-types/') || id.includes('/@slidev/monaco-types') || id.endsWith('?monaco-types&raw'))
-                  return 'monaco/bundled-types'
-                if (id.includes('/shiki/') || id.includes('/@shikijs/'))
-                  return `modules/shiki`
-                if (id.startsWith('~icons/'))
-                  return 'modules/unplugin-icons'
-                // It seems that moving slides out will breaks the production build
-                // Would need to find a better way to handle this
-                // const slideMatch = id.match(/\/@slidev\/slides\/(\d+)/)
-                // if (slideMatch && !id.includes('.frontmatter'))
-                //   return `slides/${slideMatch[1]}`
-
-                const matchedAsyncModule = ASYNC_MODULES.find(i => id.includes(`/node_modules/${i}`))
-                if (matchedAsyncModule)
-                  return `modules/${matchedAsyncModule.replace('@', '').replace('/', '-')}`
-              },
-            },
-          },
-        },
         cacheDir: isInstalledGlobally.value ? join(options.cliRoot, 'node_modules/.vite') : undefined,
       }
-
-      function isSlidevClient(id: string) {
-        return id.includes('/@slidev/') || id.includes('/slidev/packages/client/') || id.includes('/@vueuse/')
-      }
-
-      // function getNodeModuleName(path: string) {
-      //   const nodeModuelsMatch = [...path.matchAll(/node_modules\/(@[^/]+\/[^/]+|[^/]+)\//g)]
-      //   if (nodeModuelsMatch.length)
-      //     return nodeModuelsMatch[nodeModuelsMatch.length - 1][1]
-      // }
 
       return mergeConfig(injection, config)
     },

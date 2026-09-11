@@ -90,8 +90,8 @@ export function isAllowedFile(filePath: string, allowRoots: string[]) {
 /**
  * Whether a static import `value` is a public-directory asset, i.e. a
  * root-absolute Vite URL (`/foo.png`) that maps to an existing file under
- * `config.publicDir`. The Vue SFC compiler turns `<img src="/foo.png">` into a
- * static `import`, but public assets are served by URL rather than
+ * `config.publicDir`. Template compilers (e.g. the Vue SFC compiler) turn
+ * `<img src="/foo.png">` into a static `import`, but public assets are served by URL rather than
  * module-resolved, so `/foo.png` is a Vite URL — not a filesystem-absolute path
  * — and must be exempted from the `server.fs.allow` check.
  */

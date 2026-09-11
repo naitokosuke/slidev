@@ -10,11 +10,8 @@ for rendering output.
 */
 
 import type { KatexOptions } from 'katex'
-import type { MarkdownExit, RuleBlock, Token } from 'markdown-exit'
+import type { MarkdownExit, RuleBlock } from 'markdown-exit'
 import katex from 'katex'
-import { escapeVueInCode, normalizeRangeStr } from './utils'
-
-const RE_KATEX_BLOCK_INFO = /^\{([\w*,|-]+)\}\s*(\{[^}]*\})?/
 
 // Test if potential opening or closing delimiter
 // Assumes that there is a "$" at state.src[pos]
@@ -176,50 +173,41 @@ const math_block: RuleBlock = function (state, start, end, silent) {
   return true
 }
 
+export function renderKatexInline(latex: string, options: KatexOptions) {
+  options.displayMode = false
+  try {
+    return katex.renderToString(latex, options)
+  }
+  catch (error) {
+    if (options.throwOnError)
+
+      console.warn(error)
+    return latex
+  }
+}
+
+export function renderKatexBlock(latex: string, options: KatexOptions) {
+  options.displayMode = true
+  try {
+    return `<p>${katex.renderToString(latex, options)}</p>`
+  }
+  catch (error) {
+    if (options.throwOnError)
+
+      console.warn(error)
+    return latex
+  }
+}
+
+/**
+ * Parses `$...$` and `$$...$$` into `math_inline` and `math_block` tokens and renders them as plain HTML.
+ * Framework adapters can override the renderer rules to wrap the output in their components.
+ */
 export default function MarkdownItKatex(md: MarkdownExit, options: KatexOptions) {
-  // set KaTeX as the renderer for markdown-it-simplemath
-  const katexInline = function (latex: string) {
-    options.displayMode = false
-    try {
-      return escapeVueInCode(katex.renderToString(latex, options))
-    }
-    catch (error) {
-      if (options.throwOnError)
-
-        console.warn(error)
-      return latex
-    }
-  }
-
-  const inlineRenderer = function (tokens: any, idx: number) {
-    return katexInline(tokens[idx].content)
-  }
-
-  const katexBlock = function (latex: string) {
-    options.displayMode = true
-    try {
-      return `<p>${escapeVueInCode(katex.renderToString(latex, options))}</p>`
-    }
-    catch (error) {
-      if (options.throwOnError)
-
-        console.warn(error)
-      return latex
-    }
-  }
-
-  const blockRenderer = function (tokens: Token[], idx: number) {
-    const token = tokens[idx]
-    const [, rangeStr, options] = RE_KATEX_BLOCK_INFO.exec(token.info) || []
-    const ranges = normalizeRangeStr(rangeStr)
-    const optionsProp = options ? `v-bind="${options}"` : ''
-    return `<KaTexBlockWrapper ${optionsProp} :ranges='${JSON.stringify(ranges)}'>${katexBlock(tokens[idx].content)}</KaTexBlockWrapper>\n`
-  }
-
   md.inline.ruler.after('escape', 'math_inline', math_inline)
   md.block.ruler.after('blockquote', 'math_block', math_block, {
     alt: ['paragraph', 'reference', 'blockquote', 'list'],
   })
-  md.renderer.rules.math_inline = inlineRenderer
-  md.renderer.rules.math_block = blockRenderer
+  md.renderer.rules.math_inline = (tokens, idx) => renderKatexInline(tokens[idx].content, options)
+  md.renderer.rules.math_block = (tokens, idx) => `${renderKatexBlock(tokens[idx].content, options)}\n`
 }

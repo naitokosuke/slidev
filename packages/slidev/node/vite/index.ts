@@ -1,6 +1,6 @@
 import type { ResolvedSlidevOptions, SlidevPluginOptions, SlidevServerOptions } from '@slidev/types'
 import type { PluginOption } from 'vite'
-import { vueAdapter } from '../adapters/vue'
+import { frameworkAdapter } from '../adapters'
 import setupVitePlugins from '../setups/vite-plugins'
 import { createConfigPlugin } from './extendConfig'
 import { createIconsPlugin } from './icons'
@@ -13,7 +13,7 @@ import { createMonacoWriterPlugin } from './monacoWrite'
 import { createPatchMonacoSourceMapPlugin } from './patchMonacoSourceMap'
 import { createPWAPlugin } from './pwa'
 import { createRemoteAssetsPlugin } from './remoteAssets'
-import { createServerRefPlugin } from './serverRef'
+import { createSharedStatePlugin } from './sharedState'
 import { createStaticCopyPlugin } from './staticCopy'
 import { createUnocssPlugin } from './unocss'
 
@@ -22,17 +22,16 @@ export function ViteSlidevPlugin(
   pluginOptions: SlidevPluginOptions = {},
   serverOptions: SlidevServerOptions = {},
 ): Promise<PluginOption[]> {
-  // Only Vue is supported for now
-  const adapter = vueAdapter
+  const adapter = frameworkAdapter
 
   return Promise.all([
     createSlidesLoader(options, serverOptions, adapter),
-    createMcpPlugin(options),
+    createMcpPlugin(options, adapter),
     adapter.vitePlugins(options, pluginOptions),
     createSlideImportGuardPlugin(),
     createIconsPlugin(options, pluginOptions),
     createRemoteAssetsPlugin(options, pluginOptions),
-    createServerRefPlugin(options, pluginOptions),
+    createSharedStatePlugin(options, pluginOptions, adapter),
     createConfigPlugin(options),
     createMonacoTypesLoader(options),
     createMonacoWriterPlugin(options),

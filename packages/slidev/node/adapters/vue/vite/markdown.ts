@@ -3,9 +3,8 @@ import type { Plugin } from 'vite'
 import MagicString from 'magic-string-stack'
 import Markdown from 'unplugin-vue-markdown/vite'
 import setupTransformers from '../../../setups/transformers'
-import { useMarkdownItPlugins } from '../../../syntax'
 import { regexSlideSourceId } from '../../../vite/common'
-import { vueCodeblockTransformers } from '../codeblock'
+import { useMarkdownItPlugins } from '../syntax'
 
 const RE_MD_EXT = /\.md$/
 
@@ -37,7 +36,7 @@ export async function createMarkdownPlugin(
     },
     ...mdOptions,
     async markdownSetup(md) {
-      await useMarkdownItPlugins(md, options, markdownTransformMap, [...extras.codeblocks, ...vueCodeblockTransformers])
+      await useMarkdownItPlugins(md, options, markdownTransformMap, extras.codeblocks)
       await mdOptions?.markdownSetup?.(md)
     },
     transforms: {
