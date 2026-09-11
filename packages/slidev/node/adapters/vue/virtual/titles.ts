@@ -1,7 +1,8 @@
-import type { VirtualModuleTemplate } from './types'
+import type { VirtualModuleTemplate } from '../../../virtual/types'
+import { VIRTUAL_LEGACY_TITLES_ID, VIRTUAL_TITLE_RENDERER_MD_ID } from '../../../vite/common'
 
 export const templateTitleRendererMd: VirtualModuleTemplate = {
-  id: '/@slidev/title-renderer.md',
+  id: VIRTUAL_TITLE_RENDERER_MD_ID,
   getContent({ data }) {
     const lines = data.slides
       .map(({ title }, i) => `<template ${i === 0 ? 'v-if' : 'v-else-if'}="no === ${i + 1}">\n\n${title}\n\n</template>`)
@@ -23,6 +24,26 @@ export const templateTitleRendererMd: VirtualModuleTemplate = {
 export const templateTitleRenderer: VirtualModuleTemplate = {
   id: '/@slidev/title-renderer',
   async getContent() {
-    return 'export { default } from "/@slidev/title-renderer.md"'
+    return `export { default } from "${VIRTUAL_TITLE_RENDERER_MD_ID}"`
+  },
+}
+
+/**
+ * Kept for backward compatibility, use #slidev/title-renderer instead
+ *
+ * @deprecated
+ */
+export const templateLegacyTitles: VirtualModuleTemplate = {
+  id: VIRTUAL_LEGACY_TITLES_ID,
+  getContent() {
+    return `
+<script setup lang="ts">
+import TitleRenderer from '#slidev/title-renderer'
+defineProps<{ no: number | string }>()
+console.warn('/@slidev/titles.md is deprecated, import from #slidev/title-renderer instead')
+</script>
+
+<TitleRenderer :no="no" />
+`
   },
 }

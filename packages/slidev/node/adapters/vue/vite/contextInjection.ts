@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { templateImportContextUtils, templateInitContext, templateInjectionMarker } from './common'
+import { templateImportContextUtils, templateInitContext, templateInjectionMarker } from '../common'
 
 const RE_EXPORT_DEFAULT_OBJECT = /export\s+default\s+\{/
 const RE_INJECT_OPTION = /.*inject\s*:\s*([[{])/

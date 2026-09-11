@@ -2,9 +2,9 @@ import type { MarkdownTransformContext, ResolvedSlidevOptions, SlidevPluginOptio
 import type { Plugin } from 'vite'
 import MagicString from 'magic-string-stack'
 import Markdown from 'unplugin-vue-markdown/vite'
-import setupTransformers from '../setups/transformers'
+import setupTransformers from '../../../setups/transformers'
+import { regexSlideSourceId } from '../../../vite/common'
 import { useMarkdownItPlugins } from '../syntax'
-import { regexSlideSourceId } from './common'
 
 const RE_MD_EXT = /\.md$/
 

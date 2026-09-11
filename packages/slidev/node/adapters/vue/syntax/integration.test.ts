@@ -10,12 +10,12 @@ it('all syntax combined', async () => {
   const map = new Map<string, MagicString>()
 
   await useMarkdownItPlugins(md, {
-    userRoot: path.join(__dirname, '../../../../test/fixtures/'),
+    userRoot: path.join(__dirname, '../../../../../../test/fixtures/'),
     data: {
       watchFiles: {},
       slides: [{
         index: 0,
-        source: { filepath: path.join(__dirname, '../../../../test/fixtures/test.md') },
+        source: { filepath: path.join(__dirname, '../../../../../../test/fixtures/test.md') },
       }],
       config: {},
       features: { katex: true },

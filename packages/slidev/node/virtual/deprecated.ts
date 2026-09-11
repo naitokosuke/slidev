@@ -14,23 +14,3 @@ export const templateLegacyRoutes: VirtualModuleTemplate = {
     ].join('\n')
   },
 }
-
-/**
- * Kept for backward compatibility, use #slidev/title-renderer instead
- *
- * @deprecated
- */
-export const templateLegacyTitles: VirtualModuleTemplate = {
-  id: '/@slidev/titles.md',
-  getContent() {
-    return `
-<script setup lang="ts">
-import TitleRenderer from '#slidev/title-renderer'
-defineProps<{ no: number | string }>()
-console.warn('/@slidev/titles.md is deprecated, import from #slidev/title-renderer instead')
-</script>
-
-<TitleRenderer :no="no" />
-`
-  },
-}

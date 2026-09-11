@@ -2,8 +2,8 @@ import type { SlideInfo } from '@slidev/types'
 import { toKeyedTokens } from '@shikijs/magic-move/core'
 import { defineCodeblockTransformer } from '@slidev/types'
 import lz from 'lz-string'
-import { resolveSnippetImport } from '../snippet'
-import { normalizeRangeStr } from '../utils'
+import { resolveSnippetImport } from '../../../syntax/snippet'
+import { normalizeRangeStr } from '../../../syntax/utils'
 
 const RE_MAGIC_MOVE_INFO = /^(?:md|markdown) magic-move\s*(?:\[([^\]]*)\])?\s*(\{[^}]*\})?/
 // eslint-disable-next-line regexp/no-super-linear-backtracking

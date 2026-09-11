@@ -1,5 +1,6 @@
 import type { ResolvedSlidevOptions, SlideInfo, SlidePatch, SlidevData, SlidevServerOptions } from '@slidev/types'
-import type { ModuleNode, Plugin, Rolldown, ViteDevServer } from 'vite'
+import type { Plugin, Rolldown, ViteDevServer } from 'vite'
+import type { SlidevFrameworkAdapter } from '../adapters/types'
 import type { VirtualModuleContext } from '../virtual/types'
 import { notNullish, range } from '@antfu/utils'
 import * as parser from '@slidev/parser/fs'
@@ -14,17 +15,17 @@ import { templates } from '../virtual'
 import { templateConfigs } from '../virtual/configs'
 import { templateMonacoRunDeps } from '../virtual/monaco-deps'
 import { templateMonacoTypes } from '../virtual/monaco-types'
-import { templateSlides, VIRTUAL_SLIDE_PREFIX } from '../virtual/slides'
-import { templateTitleRendererMd } from '../virtual/titles'
-import { regexSlideFacadeId, regexSlideReqPath, regexSlideSourceId } from './common'
+import { regexSlideFacadeId, regexSlideReqPath, regexSlideSourceId, VIRTUAL_SLIDE_PREFIX, VIRTUAL_SLIDES_ID, VIRTUAL_TITLE_RENDERER_MD_ID } from './common'
 
 const RE_WORD_CHARS_ONLY = /^[\w-]+$/
 
 export function createSlidesLoader(
   options: ResolvedSlidevOptions,
   serverOptions: SlidevServerOptions,
+  adapter: SlidevFrameworkAdapter,
 ): Plugin {
   const { data, mode, utils, withoutNotes } = options
+  const allTemplates = [...templates, ...adapter.virtualModules]
 
   const notesMd = MarkdownExit({ html: true })
   notesMd.use(markdownItLink)
@@ -177,11 +178,11 @@ export function createSlidesLoader(
       sourceIds = newSourceIds
 
       if (data.slides.length !== newData.slides.length) {
-        moduleIds.add(templateSlides.id)
+        moduleIds.add(VIRTUAL_SLIDES_ID)
       }
 
       if (!equal(data.headmatter.defaults, newData.headmatter.defaults)) {
-        moduleIds.add(templateSlides.id)
+        moduleIds.add(VIRTUAL_SLIDES_ID)
         range(data.slides.length).map(i => hmrSlidesIndexes.add(i))
       }
 
@@ -233,37 +234,21 @@ export function createSlidesLoader(
       Object.assign(utils, createDataUtils(options))
 
       if (hmrSlidesIndexes.size > 0)
-        moduleIds.add(templateTitleRendererMd.id)
+        moduleIds.add(VIRTUAL_TITLE_RENDERER_MD_ID)
 
       for (const idx of hmrSlidesIndexes) {
         moduleIds.add(sourceIds.frontmatter[idx])
       }
 
-      const reloadBeforeOthers: ModuleNode[] = []
-      const vueModules: ModuleNode[] = []
-      for (const idx of hmrSlidesIndexes) {
-        const main = ctx.server.moduleGraph.getModuleById(sourceIds.md[idx])
-        if (main) {
-          const styles = [...main.clientImportedModules].filter(m => m.id?.includes(`&type=style`))
-          if (styles.length) {
-            // `pluginVue.transform(mainModule)` must be called before `pluginVue.load(styleModule)`
-            // to refresh the internal descriptor cache of `@vitejs/plugin-vue`
-            reloadBeforeOthers.push(main)
-            vueModules.push(...styles)
-          }
-          else {
-            vueModules.push(main)
-          }
-        }
-      }
+      const slideModules = Array.from(hmrSlidesIndexes)
+        .map(idx => ctx.server.moduleGraph.getModuleById(sourceIds.md[idx]))
+        .filter(notNullish)
 
       hmrSlidesIndexes.clear()
 
-      await Promise.all(reloadBeforeOthers.map(m => ctx.server.reloadModule(m)))
-
       const moduleEntries = [
         ...ctx.modules.filter(i => i.id === templateMonacoRunDeps.id || i.id === templateMonacoTypes.id),
-        ...vueModules,
+        ...await adapter.resolveSlidesHmr(ctx.server, slideModules),
         ...Array.from(moduleIds).map(id => ctx.server.moduleGraph.getModuleById(id)),
       ]
         .filter(notNullish)
@@ -284,7 +269,7 @@ export function createSlidesLoader(
     },
 
     async load(id): Promise<Rolldown.LoadResult> {
-      const template = templates.find(i => i.id === id)
+      const template = allTemplates.find(i => i.id === id)
       if (template) {
         const templateContext: VirtualModuleContext = {
           resolve: this.resolve.bind(this),
@@ -339,41 +324,14 @@ export function createSlidesLoader(
           return {
             code: [
               '// @unocss-include',
-              'import { computed, reactive, shallowReactive } from "vue"',
-              `export const frontmatterData = ${JSON.stringify(fontmatter)}`,
-              // handle HMR, update frontmatter with update
-              'if (import.meta.hot) {',
-              '  import.meta.hot.data.frontmatter ??= reactive(frontmatterData)',
-              '  import.meta.hot.accept(({ frontmatterData: update }) => {',
-              '    const frontmatter = import.meta.hot.data.frontmatter',
-              '    Object.keys(frontmatter).forEach(key => {',
-              '      if (!(key in update)) delete frontmatter[key]',
-              '    })',
-              '    Object.assign(frontmatter, update)',
-              '  })',
-              '}',
-              'export const frontmatter = import.meta.hot ? import.meta.hot.data.frontmatter : reactive(frontmatterData)',
-              'export default frontmatter',
-              'export const meta = shallowReactive({',
-              '  get layout(){ return frontmatter.layout },',
-              '  get transition(){ return frontmatter.transition },',
-              '  get class(){ return frontmatter.class },',
-              '  get clicks(){ return frontmatter.clicks },',
-              '  get name(){ return frontmatter.name },',
-              '  get preload(){ return frontmatter.preload },',
-              // No need to be reactive, as it's only used once after reload
-              '  slide: {',
-              `    ...(${JSON.stringify(slideBase)}),`,
-              `    frontmatter,`,
-              `    filepath: ${JSON.stringify(mode === 'dev' ? slide.source.filepath : '')},`,
-              `    start: ${JSON.stringify(slide.source.start)},`,
-              `    sourceIndex: ${JSON.stringify(slide.source.index)},`,
-              `    id: ${idx},`,
-              `    no: ${no},`,
-              '  },',
-              '  __clicksContext: null,',
-              '  __preloaded: false,',
-              '})',
+              adapter.slideFrontmatterModule(fontmatter, {
+                ...slideBase,
+                filepath: mode === 'dev' ? slide.source.filepath : '',
+                start: slide.source.start,
+                sourceIndex: slide.source.index,
+                id: idx,
+                no: +no,
+              }),
             ].join('\n'),
             map: { mappings: '' },
           }

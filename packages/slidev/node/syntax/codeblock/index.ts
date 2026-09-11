@@ -2,13 +2,12 @@ import type { CodeblockTransformContext, CodeblockTransformer, ResolvedSlidevOpt
 import type { MarkdownExit } from 'markdown-exit'
 import { ensureSuffix } from '@antfu/utils'
 import { regexSlideSourceId } from '../../vite/common'
-import magicMoveTransformer from './magic-move'
-import mermaidTransformer from './mermaid'
-import monacoTransformer from './monaco'
-import plantUmlTransformer from './plant-uml'
-import wrapperTransformer from './wrapper'
 
-export function MarkdownItCodeblocks(md: MarkdownExit, options: ResolvedSlidevOptions, extraTransformers: (CodeblockTransformer | false)[]) {
+/**
+ * Renders code blocks with the first transformer returning a result.
+ * The last transformer must handle every code block (the framework adapter's fallback wrapper).
+ */
+export function MarkdownItCodeblocks(md: MarkdownExit, options: ResolvedSlidevOptions, transformers: (CodeblockTransformer | false)[]) {
   const oldFence = md.renderer.rules.fence!
   md.renderer.rules.fence = async function (tokens, idx, renderOptions, env, slf) {
     const token = tokens[idx]
@@ -28,15 +27,6 @@ export function MarkdownItCodeblocks(md: MarkdownExit, options: ResolvedSlidevOp
         return oldFence(tokens, idx, renderOptions, env, slf)
       },
     }
-
-    const transformers = [
-      ...extraTransformers,
-      mermaidTransformer,
-      plantUmlTransformer,
-      magicMoveTransformer,
-      monacoTransformer,
-      wrapperTransformer,
-    ]
 
     for (const transformer of transformers) {
       if (!transformer)

@@ -4,6 +4,7 @@ import fg from 'fast-glob'
 import { createDebug } from 'obug'
 import path from 'pathe'
 import pm from 'picomatch'
+import { frameworkAdapter } from './adapters'
 import { resolveAddons } from './integrations/addons'
 import { getThemeMeta, resolveTheme } from './integrations/themes'
 import { parser } from './parser'
@@ -130,7 +131,7 @@ export async function createDataUtils(resolved: Omit<ResolvedSlidevOptions, 'uti
         const layouts: Record<string, string> = {}
         const layoutPaths = await Promise.all(
           [resolved.clientRoot, ...resolved.roots]
-            .map(root => fg('layouts/**/*.{vue,js,mjs,ts,mts}', {
+            .map(root => fg(`layouts/**/*.{${frameworkAdapter.layoutExtensions.join(',')}}`, {
               cwd: root,
               absolute: true,
               suppressErrors: true,

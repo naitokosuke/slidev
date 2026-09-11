@@ -1,4 +1,4 @@
-import type { VirtualModuleTemplate } from './types'
+import type { VirtualModuleTemplate } from '../../../virtual/types'
 import { join } from 'pathe'
 
 const id = `/@slidev/global-layers`

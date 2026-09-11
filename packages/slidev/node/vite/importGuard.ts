@@ -3,9 +3,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'pathe'
 import { parseSync } from 'vite'
-import { templateLegacyTitles } from '../virtual/deprecated'
-import { templateTitleRendererMd } from '../virtual/titles'
-import { regexSlideSourceId } from './common'
+import { regexSlideSourceId, VIRTUAL_LEGACY_TITLES_ID, VIRTUAL_TITLE_RENDERER_MD_ID } from './common'
 
 interface ImportSource {
   value: string
@@ -13,8 +11,8 @@ interface ImportSource {
 }
 
 const virtualSlideMarkdownIds = new Set([
-  templateTitleRendererMd.id,
-  templateLegacyTitles.id,
+  VIRTUAL_TITLE_RENDERER_MD_ID,
+  VIRTUAL_LEGACY_TITLES_ID,
 ])
 
 export function createSlideImportGuardPlugin(): Plugin {
@@ -92,8 +90,8 @@ export function isAllowedFile(filePath: string, allowRoots: string[]) {
 /**
  * Whether a static import `value` is a public-directory asset, i.e. a
  * root-absolute Vite URL (`/foo.png`) that maps to an existing file under
- * `config.publicDir`. The Vue SFC compiler turns `<img src="/foo.png">` into a
- * static `import`, but public assets are served by URL rather than
+ * `config.publicDir`. Template compilers (e.g. the Vue SFC compiler) turn
+ * `<img src="/foo.png">` into a static `import`, but public assets are served by URL rather than
  * module-resolved, so `/foo.png` is a Vite URL — not a filesystem-absolute path
  * — and must be exempted from the `server.fs.allow` check.
  */
