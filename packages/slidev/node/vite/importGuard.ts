@@ -3,9 +3,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'pathe'
 import { parseSync } from 'vite'
-import { templateLegacyTitles } from '../virtual/deprecated'
-import { templateTitleRendererMd } from '../virtual/titles'
-import { regexSlideSourceId } from './common'
+import { regexSlideSourceId, VIRTUAL_LEGACY_TITLES_ID, VIRTUAL_TITLE_RENDERER_MD_ID } from './common'
 
 interface ImportSource {
   value: string
@@ -13,8 +11,8 @@ interface ImportSource {
 }
 
 const virtualSlideMarkdownIds = new Set([
-  templateTitleRendererMd.id,
-  templateLegacyTitles.id,
+  VIRTUAL_TITLE_RENDERER_MD_ID,
+  VIRTUAL_LEGACY_TITLES_ID,
 ])
 
 export function createSlideImportGuardPlugin(): Plugin {

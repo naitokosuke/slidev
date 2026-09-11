@@ -1,5 +1,6 @@
 import type { ResolvedSlidevOptions, SlideInfo, SlidePatch, SlidevData, SlidevServerOptions } from '@slidev/types'
 import type { ModuleNode, Plugin, Rolldown, ViteDevServer } from 'vite'
+import type { SlidevFrameworkAdapter } from '../adapters/types'
 import type { VirtualModuleContext } from '../virtual/types'
 import { notNullish, range } from '@antfu/utils'
 import * as parser from '@slidev/parser/fs'
@@ -14,17 +15,17 @@ import { templates } from '../virtual'
 import { templateConfigs } from '../virtual/configs'
 import { templateMonacoRunDeps } from '../virtual/monaco-deps'
 import { templateMonacoTypes } from '../virtual/monaco-types'
-import { templateSlides, VIRTUAL_SLIDE_PREFIX } from '../virtual/slides'
-import { templateTitleRendererMd } from '../virtual/titles'
-import { regexSlideFacadeId, regexSlideReqPath, regexSlideSourceId } from './common'
+import { regexSlideFacadeId, regexSlideReqPath, regexSlideSourceId, VIRTUAL_SLIDE_PREFIX, VIRTUAL_SLIDES_ID, VIRTUAL_TITLE_RENDERER_MD_ID } from './common'
 
 const RE_WORD_CHARS_ONLY = /^[\w-]+$/
 
 export function createSlidesLoader(
   options: ResolvedSlidevOptions,
   serverOptions: SlidevServerOptions,
+  adapter: SlidevFrameworkAdapter,
 ): Plugin {
   const { data, mode, utils, withoutNotes } = options
+  const allTemplates = [...templates, ...adapter.virtualModules]
 
   const notesMd = MarkdownExit({ html: true })
   notesMd.use(markdownItLink)
@@ -177,11 +178,11 @@ export function createSlidesLoader(
       sourceIds = newSourceIds
 
       if (data.slides.length !== newData.slides.length) {
-        moduleIds.add(templateSlides.id)
+        moduleIds.add(VIRTUAL_SLIDES_ID)
       }
 
       if (!equal(data.headmatter.defaults, newData.headmatter.defaults)) {
-        moduleIds.add(templateSlides.id)
+        moduleIds.add(VIRTUAL_SLIDES_ID)
         range(data.slides.length).map(i => hmrSlidesIndexes.add(i))
       }
 
@@ -233,7 +234,7 @@ export function createSlidesLoader(
       Object.assign(utils, createDataUtils(options))
 
       if (hmrSlidesIndexes.size > 0)
-        moduleIds.add(templateTitleRendererMd.id)
+        moduleIds.add(VIRTUAL_TITLE_RENDERER_MD_ID)
 
       for (const idx of hmrSlidesIndexes) {
         moduleIds.add(sourceIds.frontmatter[idx])
@@ -284,7 +285,7 @@ export function createSlidesLoader(
     },
 
     async load(id): Promise<Rolldown.LoadResult> {
-      const template = templates.find(i => i.id === id)
+      const template = allTemplates.find(i => i.id === id)
       if (template) {
         const templateContext: VirtualModuleContext = {
           resolve: this.resolve.bind(this),

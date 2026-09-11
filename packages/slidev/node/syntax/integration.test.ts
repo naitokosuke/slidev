@@ -4,6 +4,7 @@ import path from 'pathe'
 import * as shiki from 'shiki'
 import { expect, it } from 'vitest'
 import { useMarkdownItPlugins } from '.'
+import { vueCodeblockTransformers } from '../adapters/vue/codeblock'
 
 it('all syntax combined', async () => {
   const md = MarkdownExit({ html: true })
@@ -25,7 +26,7 @@ it('all syntax combined', async () => {
       shikiOptions: { theme: 'nord' },
       katexOptions: {},
     },
-  } as any, map, [])
+  } as any, map, vueCodeblockTransformers)
 
   const result = await md.renderAsync(`
 # Slide Title

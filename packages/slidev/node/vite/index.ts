@@ -1,17 +1,12 @@
 import type { ResolvedSlidevOptions, SlidevPluginOptions, SlidevServerOptions } from '@slidev/types'
 import type { PluginOption } from 'vite'
+import { vueAdapter } from '../adapters/vue'
 import setupVitePlugins from '../setups/vite-plugins'
-import { createVueCompilerFlagsPlugin } from './compilerFlagsVue'
-import { createComponentsPlugin } from './components'
-import { createContextInjectionPlugin } from './contextInjection'
 import { createConfigPlugin } from './extendConfig'
-import { createHmrPatchPlugin } from './hmrPatch'
 import { createIconsPlugin } from './icons'
 import { createSlideImportGuardPlugin } from './importGuard'
 import { createInspectPlugin } from './inspect'
-import { createLayoutWrapperPlugin } from './layoutWrapper'
 import { createSlidesLoader } from './loaders'
-import { createMarkdownPlugin } from './markdown'
 import { createMcpPlugin } from './mcp'
 import { createMonacoTypesLoader } from './monacoTypes'
 import { createMonacoWriterPlugin } from './monacoWrite'
@@ -21,30 +16,26 @@ import { createRemoteAssetsPlugin } from './remoteAssets'
 import { createServerRefPlugin } from './serverRef'
 import { createStaticCopyPlugin } from './staticCopy'
 import { createUnocssPlugin } from './unocss'
-import { createVuePlugin } from './vue'
 
 export function ViteSlidevPlugin(
   options: ResolvedSlidevOptions,
   pluginOptions: SlidevPluginOptions = {},
   serverOptions: SlidevServerOptions = {},
 ): Promise<PluginOption[]> {
+  // Only Vue is supported for now
+  const adapter = vueAdapter
+
   return Promise.all([
-    createSlidesLoader(options, serverOptions),
+    createSlidesLoader(options, serverOptions, adapter),
     createMcpPlugin(options),
-    createMarkdownPlugin(options, pluginOptions),
-    createLayoutWrapperPlugin(options),
-    createContextInjectionPlugin(),
-    createVuePlugin(options, pluginOptions),
+    adapter.vitePlugins(options, pluginOptions),
     createSlideImportGuardPlugin(),
-    createHmrPatchPlugin(),
-    createComponentsPlugin(options, pluginOptions),
     createIconsPlugin(options, pluginOptions),
     createRemoteAssetsPlugin(options, pluginOptions),
     createServerRefPlugin(options, pluginOptions),
     createConfigPlugin(options),
     createMonacoTypesLoader(options),
     createMonacoWriterPlugin(options),
-    createVueCompilerFlagsPlugin(options),
     createUnocssPlugin(options, pluginOptions),
     createStaticCopyPlugin(options, pluginOptions),
     createInspectPlugin(options, pluginOptions),

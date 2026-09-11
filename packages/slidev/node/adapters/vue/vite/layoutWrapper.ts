@@ -1,8 +1,9 @@
 import type { ResolvedSlidevOptions } from '@slidev/types'
 import type { Plugin } from 'vite'
 import { bold, gray, red, yellow } from 'ansis'
-import { toAtFS } from '../resolver'
-import { regexSlideSourceId, templateImportContextUtils, templateInitContext, templateInjectionMarker } from './common'
+import { toAtFS } from '../../../resolver'
+import { regexSlideSourceId } from '../../../vite/common'
+import { templateImportContextUtils, templateInitContext, templateInjectionMarker } from '../common'
 
 const RE_SCRIPT_SETUP_TAG = /^<script setup.*>/m
 

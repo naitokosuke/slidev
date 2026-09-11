@@ -3,11 +3,12 @@ import MarkdownExit from 'markdown-exit'
 import path from 'pathe'
 import * as shiki from 'shiki'
 import { expect, it } from 'vitest'
-import { MarkdownItCodeblocks } from '.'
+import { vueCodeblockTransformers } from '.'
+import { MarkdownItCodeblocks } from '../../../syntax/codeblock'
 
 it('resolves snippet imports before magic move validation', async () => {
   const md = MarkdownExit({ html: true })
-  const userRoot = path.join(__dirname, '../../../../../test/fixtures/')
+  const userRoot = path.join(__dirname, '../../../../../../test/fixtures/')
   const watchFiles: Record<string, Set<number>> = {}
 
   md.use(MarkdownItCodeblocks, {
@@ -24,7 +25,7 @@ it('resolves snippet imports before magic move validation', async () => {
       shiki,
       shikiOptions: { theme: 'nord' },
     },
-  } as any, [])
+  } as any, vueCodeblockTransformers)
 
   const result = await md.renderAsync([
     '````md magic-move',

@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { regexSlideSourceId } from './common'
+import { regexSlideSourceId } from '../../../vite/common'
 
 /**
  * force reload slide component to ensure v-click resolves correctly

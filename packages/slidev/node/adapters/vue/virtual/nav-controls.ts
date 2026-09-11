@@ -1,7 +1,7 @@
-import type { VirtualModuleTemplate } from './types'
+import type { VirtualModuleTemplate } from '../../../virtual/types'
 import { existsSync } from 'node:fs'
 import { join } from 'pathe'
-import { toAtFS } from '../resolver'
+import { toAtFS } from '../../../resolver'
 
 export const templateNavControls: VirtualModuleTemplate = {
   id: '/@slidev/custom-nav-controls',

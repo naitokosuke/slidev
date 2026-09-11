@@ -1,9 +1,8 @@
-import type { VirtualModuleTemplate } from './types'
-
-export const VIRTUAL_SLIDE_PREFIX = '/@slidev/slides/'
+import type { VirtualModuleTemplate } from '../../../virtual/types'
+import { VIRTUAL_SLIDE_PREFIX, VIRTUAL_SLIDES_ID } from '../../../vite/common'
 
 export const templateSlides: VirtualModuleTemplate = {
-  id: '/@slidev/slides',
+  id: VIRTUAL_SLIDES_ID,
   async getContent({ data, utils }) {
     const layouts = await utils.getLayouts()
     const statements = [

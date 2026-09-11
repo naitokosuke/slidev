@@ -2,9 +2,10 @@ import type { MarkdownTransformContext, ResolvedSlidevOptions, SlidevPluginOptio
 import type { Plugin } from 'vite'
 import MagicString from 'magic-string-stack'
 import Markdown from 'unplugin-vue-markdown/vite'
-import setupTransformers from '../setups/transformers'
-import { useMarkdownItPlugins } from '../syntax'
-import { regexSlideSourceId } from './common'
+import setupTransformers from '../../../setups/transformers'
+import { useMarkdownItPlugins } from '../../../syntax'
+import { regexSlideSourceId } from '../../../vite/common'
+import { vueCodeblockTransformers } from '../codeblock'
 
 const RE_MD_EXT = /\.md$/
 
@@ -36,7 +37,7 @@ export async function createMarkdownPlugin(
     },
     ...mdOptions,
     async markdownSetup(md) {
-      await useMarkdownItPlugins(md, options, markdownTransformMap, extras.codeblocks)
+      await useMarkdownItPlugins(md, options, markdownTransformMap, [...extras.codeblocks, ...vueCodeblockTransformers])
       await mdOptions?.markdownSetup?.(md)
     },
     transforms: {

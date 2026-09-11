@@ -1,5 +1,5 @@
 import { defineCodeblockTransformer } from '@slidev/types'
-import { escapeVueInCode, normalizeRangeStr } from '../utils'
+import { escapeVueInCode, normalizeRangeStr } from '../../../syntax/utils'
 
 // eslint-disable-next-line regexp/no-super-linear-backtracking
 const RE_BLOCK_INFO = /^([\w'-]+)?(?:[ \t]*|[ \t][ \w\t'-]*)(?:\[([^\]]*)\])?[ \t]*(?:\{([\w,|\-*]+)\})?[ \t]*(\{[^}]*\})?(.*)$/
